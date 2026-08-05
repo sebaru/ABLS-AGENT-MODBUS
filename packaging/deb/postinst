@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+# Creation du groupe abls
+if ! getent group abls >/dev/null 2>&1; then
+  addgroup --system abls || true
+fi
+
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   systemctl daemon-reload >/dev/null 2>&1 || true
 

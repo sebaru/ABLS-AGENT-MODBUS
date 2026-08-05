@@ -94,6 +94,7 @@ set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_COMPONENTS_ALL runtime)
 
 set(CPACK_RPM_RUNTIME_PACKAGE_NAME "abls-agent-modbus")
+set(CPACK_RPM_RUNTIME_PACKAGE_GROUP "abls")
 set(CPACK_RPM_RUNTIME_PACKAGE_SUMMARY "Abls-Habitat Modbus runtime")
 set(CPACK_RPM_RUNTIME_PACKAGE_REQUIRES "glib2, json-glib, abls-libs, abls-agent-libs")
 set(CPACK_RPM_RUNTIME_FILE_NAME "abls-agent-modbus-${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE}.rpm")
