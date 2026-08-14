@@ -1,24 +1,20 @@
 #!/bin/bash
-# build_rpm.sh -- Build and sign RPM via CPack
+# build_rpm.sh -- Build RPM via CPack
 set -euo pipefail
 
 PACKAGE_ONLY=false
-NO_SIGN=false
 
 for arg in "$@"; do
   case "$arg" in
     --package-only|-p)
       PACKAGE_ONLY=true
       ;;
-    --no-sign)
-      NO_SIGN=true
-      ;;
     -h|--help)
-      echo "Usage: $0 [--package-only|-p] [--no-sign]"
+      echo "Usage: $0 [--package-only|-p]"
       exit 0
       ;;
     *)
-      echo "Usage: $0 [--package-only|-p] [--no-sign]"
+      echo "Usage: $0 [--package-only|-p]"
       exit 2
       ;;
   esac
@@ -26,13 +22,12 @@ done
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
-RPM_SIGNER_ID="6C86F2C11305554A61A2221512671FDB87025D1B"
 
 echo "Building RPM package for abls-agent-modbus..."
 echo "Project directory: $PROJECT_DIR"
 echo "Build directory:   $BUILD_DIR"
 echo "Package-only mode: $PACKAGE_ONLY"
-echo "Signing mode:      $([[ "$NO_SIGN" == "true" ]] && echo disabled || echo enabled)"
+echo "Signing mode:      disabled (centralized in ABLS-PKGS)"
 echo "Install prefix:    /usr (forced for RPM packaging)"
 
 mkdir -p "$BUILD_DIR"
@@ -65,27 +60,40 @@ if [[ -z "$debuginfo_rpm" ]]; then
   exit 1
 fi
 
-if [[ "$NO_SIGN" == "false" ]]; then
-  if ! command -v gpg >/dev/null 2>&1; then
-    echo "Error: gpg command not found but signing is enabled"
-    exit 1
-  fi
-  if ! command -v rpmsign >/dev/null 2>&1; then
-    echo "Error: rpmsign command not found but signing is enabled"
-    exit 1
+publish_to_abls_pkgs_repo() {
+  local target_repo_root="${ABLS_PKGS_REPO_DIR:-$PROJECT_DIR/../ABLS-PKGS}"
+  local resolved_public_dir=""
+
+  if [[ -d "$target_repo_root/public" ]]; then
+    resolved_public_dir="$target_repo_root/public"
+  elif [[ -d "$target_repo_root/rpms" || "$(basename "$target_repo_root")" == "public" ]]; then
+    resolved_public_dir="$target_repo_root"
+  else
+    resolved_public_dir="$target_repo_root/public"
   fi
 
-  echo "Signing key id:    $RPM_SIGNER_ID"
-
-  rpmsign --key-id "$RPM_SIGNER_ID" --addsign "$runtime_rpm"
-
-  checksig_output="$(rpm --checksig "$runtime_rpm" 2>&1 || true)"
-  if ! grep -Eqi 'signatures?[^[:alpha:]]+OK|pgp[^[:alpha:]]+OK|rsa[^[:alpha:]]+OK|ecdsa[^[:alpha:]]+OK|eddsa[^[:alpha:]]+OK' <<<"$checksig_output"; then
-    echo "Error: unsigned or invalid signature for $runtime_rpm"
-    echo "rpm --checksig output: $checksig_output"
-    exit 1
+  if [[ ! -d "$resolved_public_dir" ]]; then
+    echo "WARN: ABLS-PKGS repo not found at $resolved_public_dir; skipping publish"
+    return 0
   fi
-fi
+
+  shopt -s nullglob
+  local rpm_file
+  for rpm_file in "$BUILD_DIR"/*.rpm; do
+    local arch target_dir
+    arch="$(rpm -qp --qf '%{ARCH}' "$rpm_file" 2>/dev/null || true)"
+    target_dir="$resolved_public_dir/rpms"
+    [[ -n "$arch" ]] && target_dir="$target_dir/$arch"
+    mkdir -p "$target_dir"
+    cp -f "$rpm_file" "$target_dir/"
+  done
+  shopt -u nullglob
+
+  echo "Published to:"
+  echo "  $resolved_public_dir/rpms"
+}
+
+publish_to_abls_pkgs_repo
 
 echo "RPM generated:"
 echo "  $runtime_rpm"

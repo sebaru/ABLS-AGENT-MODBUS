@@ -21,14 +21,11 @@ Behavior:
   - Creates annotated tag v<version>
   - Creates main from trunk if missing, then merges trunk into main
   - Pushes main and tag to origin
-  - Copies produced RPMs from ABLS-AGENT-MODBUS/build to ABLS-PKGS/public/rpms/<arch>
-  - Copies produced DEBs from ABLS-AGENT-MODBUS/build/deb/<suite>/<arch> to ABLS-PKGS/deb-packages/<suite>/
 
-Environment:
-  - ABLS_PKGS_REPO_DIR: optional destination override for copied packages
-    (accepts ABLS-PKGS root or ABLS-PKGS/public)
-  - ABLS_DEB_SUITES: optional Debian suite list for build_apt.sh
+Environment:  - ABLS_DEB_SUITES: optional Debian suite list for build_apt.sh
     (default: "bookworm trixie")
+  - ABLS_DEB_ARCHES: optional Debian arch list for build_apt.sh
+    (default: "amd64 arm64 armhf")
 EOF
 }
 
@@ -121,100 +118,6 @@ ensure_tag_absent() {
   fi
 }
 
-resolve_pkgs_dirs() {
-  local target_repo_root="${ABLS_PKGS_REPO_DIR:-$WORKSPACE_DIR/ABLS-PKGS}"
-  local resolved_repo_root=""
-  local resolved_public_dir=""
-
-  if [[ -d "$target_repo_root/public" ]]; then
-    resolved_repo_root="$target_repo_root"
-    resolved_public_dir="$target_repo_root/public"
-  elif [[ -d "$target_repo_root/rpms" || "$(basename "$target_repo_root")" == "public" ]]; then
-    resolved_repo_root="$(cd "$target_repo_root/.." && pwd)"
-    resolved_public_dir="$target_repo_root"
-  else
-    resolved_repo_root="$target_repo_root"
-    resolved_public_dir="$target_repo_root"
-  fi
-
-  printf '%s\n%s\n' "$resolved_repo_root" "$resolved_public_dir"
-}
-
-copy_built_packages_to_abls_pkgs_repo() {
-  local build_dir="$PROJECT_DIR/build"
-  local target_repo_root=""
-  local target_public_dir=""
-  local found_rpm=false
-  local found_deb=false
-
-  mapfile -t resolved_dirs < <(resolve_pkgs_dirs)
-  target_repo_root="${resolved_dirs[0]}"
-  target_public_dir="${resolved_dirs[1]}"
-
-  if [[ ! -d "$build_dir" ]]; then
-    echo "Warning: build directory not found: $build_dir"
-    return 0
-  fi
-
-  if [[ ! -d "$target_repo_root" ]]; then
-    echo "Warning: RPM target directory not found: $target_repo_root"
-    echo "Hint: set ABLS_PKGS_REPO_DIR to override destination"
-    return 0
-  fi
-
-  shopt -s nullglob
-  local rpm_files=("$build_dir"/*.rpm)
-  shopt -u nullglob
-
-  for rpm_file in "${rpm_files[@]}"; do
-    found_rpm=true
-    local arch
-    arch="$(rpm -qp --qf '%{ARCH}' "$rpm_file" 2>/dev/null || true)"
-
-    local target_dir="$target_public_dir/rpms"
-    if [[ -n "$arch" ]]; then
-      target_dir="$target_public_dir/rpms/$arch"
-    fi
-
-    run_cmd "mkdir -p '$target_dir'"
-    run_cmd "cp -f '$rpm_file' '$target_dir/'"
-  done
-
-  local deb_root="$build_dir/deb"
-  if [[ -d "$deb_root" ]]; then
-    local suite_dir suite_name deb_target_dir
-    for suite_dir in "$deb_root"/*; do
-      [[ -d "$suite_dir" ]] || continue
-      suite_name="$(basename "$suite_dir")"
-      deb_target_dir="$target_repo_root/deb-packages/$suite_name"
-      run_cmd "mkdir -p '$deb_target_dir'"
-
-      local arch_dir deb_file
-      for arch_dir in "$suite_dir"/*; do
-        [[ -d "$arch_dir" ]] || continue
-        shopt -s nullglob
-        for deb_file in "$arch_dir"/*.deb; do
-          found_deb=true
-          run_cmd "cp -f '$deb_file' '$deb_target_dir/'"
-        done
-        shopt -u nullglob
-      done
-    done
-  fi
-
-  if [[ "$found_rpm" == "false" ]]; then
-    echo "Warning: no RPM found in $build_dir"
-  else
-    echo "RPM files copied to $target_public_dir/rpms"
-  fi
-
-  if [[ "$found_deb" == "false" ]]; then
-    echo "Warning: no DEB found in $deb_root"
-  else
-    echo "DEB files copied to $target_repo_root/deb-packages"
-  fi
-}
-
 initial_branch=""
 current_branch() {
   git rev-parse --abbrev-ref HEAD
@@ -258,7 +161,7 @@ run_cmd "git tag -a $release_tag -m 'TAG: Create tag $release_tag.'"
 run_cmd "./build.sh"
 run_cmd "./build_rpm.sh"
 for deb_suite in $DEB_SUITES; do
-  run_cmd "./build_apt.sh --dist $deb_suite --no-sign"
+  run_cmd "./build_apt.sh --dist $deb_suite"
 done
 
 if git show-ref --verify --quiet refs/remotes/origin/main; then
@@ -276,7 +179,6 @@ fi
 run_cmd "git merge --no-ff -m 'Create $release_tag' trunk"
 run_cmd "git push origin main"
 run_cmd "git push origin $release_tag"
-copy_built_packages_to_abls_pkgs_repo
 
 echo "Release flow completed for $release_tag"
 echo "Rollback hints if needed:"
