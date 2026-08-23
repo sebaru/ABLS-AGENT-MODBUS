@@ -6,8 +6,6 @@ PACKAGE_ONLY=false
 CLEAN=false
 TARGET_DIST=""
 TARGET_ARCH=""
-DEB_VERSION_SUFFIX=""
-USE_DIST_SUFFIX=true
 
 detect_host_dist() {
   local codename=""
@@ -34,14 +32,12 @@ Options:
   --package-only, -p   Skip compilation and only run cpack
   --clean              Remove old .deb artifacts before build
   --dist <suite>       Target suite label for output path (default: host OS codename)
-  --version-suffix <s> Debian version suffix override (example: ~trixie)
-  --no-dist-suffix     Disable automatic ~<dist> suffix
   -h, --help           Show this help
 
 Notes:
 - This script builds only the native host architecture.
 - By default, suite is inferred from /etc/os-release (VERSION_CODENAME/DEBIAN_CODENAME).
-- --dist is used for output path and default Debian version suffix (~<dist>).
+- --dist is used for output path only; no version suffix is appended by default.
 - Package signing is centralized in ABLS-PKGS.
 EOF
 }
@@ -60,15 +56,6 @@ while [[ $# -gt 0 ]]; do
       TARGET_DIST="${2:-}"
       [[ -n "$TARGET_DIST" ]] || { echo "Missing value for --dist"; exit 2; }
       shift 2
-      ;;
-    --version-suffix)
-      DEB_VERSION_SUFFIX="${2:-}"
-      [[ -n "$DEB_VERSION_SUFFIX" ]] || { echo "Missing value for --version-suffix"; exit 2; }
-      shift 2
-      ;;
-    --no-dist-suffix)
-      USE_DIST_SUFFIX=false
-      shift
       ;;
     -h|--help)
       usage
@@ -101,16 +88,12 @@ if [[ -z "$TARGET_DIST" ]]; then
   TARGET_DIST="$(detect_host_dist)"
 fi
 
-if [[ -z "$DEB_VERSION_SUFFIX" && "$USE_DIST_SUFFIX" == "true" ]]; then
-  DEB_VERSION_SUFFIX="~$TARGET_DIST"
-fi
 
 BUILD_DIR="$PROJECT_DIR/build/$TARGET_DIST/$TARGET_ARCH"
-ARTIFACT_DIR="$PROJECT_DIR/build/deb/$TARGET_DIST/$TARGET_ARCH"
+ARTIFACT_DIR="$PROJECT_DIR/build/pkgs/deb/$TARGET_DIST/$TARGET_ARCH"
 cmake_args=(
   -DCMAKE_INSTALL_PREFIX=/usr
   -DCPACK_DEBIAN_PACKAGE_ARCHITECTURE="$TARGET_ARCH"
-  -DABLS_DEB_VERSION_SUFFIX="$DEB_VERSION_SUFFIX"
 )
 
 echo "Building DEB package for abls-agent-modbus..."
@@ -118,10 +101,9 @@ echo "Project directory: $PROJECT_DIR"
 echo "Build directory:   $BUILD_DIR"
 echo "Output directory:  $ARTIFACT_DIR"
 echo "Package-only mode: $PACKAGE_ONLY"
-echo "Signing mode:      disabled (repository metadata signed in ABLS-PKGS)"
+echo "Signing mode:      disabled (centralized in ABLS-PKGS)"
 echo "Target suite:      $TARGET_DIST"
 echo "Target arch:       $TARGET_ARCH"
-echo "Version suffix:    ${DEB_VERSION_SUFFIX:-<none>}"
 
 mkdir -p "$BUILD_DIR"
 mkdir -p "$ARTIFACT_DIR"
@@ -187,38 +169,6 @@ copy_with_normalized_name() {
 
 copy_with_normalized_name "$runtime_deb" "$ARTIFACT_DIR"
 
-publish_to_abls_pkgs_repo() {
-  local target_repo_root="${ABLS_PKGS_REPO_DIR:-$PROJECT_DIR/../ABLS-PKGS}"
-  local resolved_repo_root=""
-
-  if [[ -d "$target_repo_root/public" ]]; then
-    resolved_repo_root="$target_repo_root"
-  elif [[ "$(basename "$target_repo_root")" == "public" ]]; then
-    resolved_repo_root="$(cd "$target_repo_root/.." && pwd)"
-  else
-    resolved_repo_root="$target_repo_root"
-  fi
-
-  if [[ ! -d "$resolved_repo_root" ]]; then
-    echo "WARN: ABLS-PKGS repo not found at $resolved_repo_root; skipping publish"
-    return 0
-  fi
-
-  local publish_dir="$resolved_repo_root/deb-packages/$TARGET_DIST/$TARGET_ARCH"
-  mkdir -p "$publish_dir"
-
-  shopt -s nullglob
-  local deb_file
-  for deb_file in "$ARTIFACT_DIR"/*.deb; do
-    cp -f "$deb_file" "$publish_dir/"
-  done
-  shopt -u nullglob
-
-  echo "Published to:"
-  echo "  $publish_dir"
-}
-
-publish_to_abls_pkgs_repo
 
 echo "DEB generated:"
 echo "  $runtime_deb"
