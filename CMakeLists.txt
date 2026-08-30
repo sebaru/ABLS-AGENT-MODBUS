@@ -80,6 +80,22 @@ install(FILES packaging/systemd/abls-agent-modbus@.service
   COMPONENT runtime
 )
 
+execute_process(
+  COMMAND pkg-config --variable=systemduserunitdir systemd
+  OUTPUT_VARIABLE ABLS_SYSTEMD_USER_UNIT_INSTALL_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
+
+if(NOT ABLS_SYSTEMD_USER_UNIT_INSTALL_DIR)
+  set(ABLS_SYSTEMD_USER_UNIT_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/systemd/user")
+endif()
+
+install(FILES packaging/systemd/user/abls-agent-modbus@.service
+  DESTINATION ${ABLS_SYSTEMD_USER_UNIT_INSTALL_DIR}
+  COMPONENT runtime
+)
+
 set(CPACK_PACKAGE_NAME "abls-agent-modbus")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_RELEASE "1")
