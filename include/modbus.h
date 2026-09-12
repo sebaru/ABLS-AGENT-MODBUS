@@ -115,6 +115,9 @@
     gpointer bit_comm;                                                                       /* Bit interne d'etat de la comm */
   };
 
+ extern struct ABLS_AGENT *Agent;
+ extern struct MODBUS_VARS *Agent_vars;
+
 /****************************************************** Déclaration des prototypes ********************************************/
 
 #endif

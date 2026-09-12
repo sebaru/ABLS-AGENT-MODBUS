@@ -44,6 +44,9 @@
 
  #include "modbus.h"
 
+ struct ABLS_AGENT *Agent = NULL;
+ struct MODBUS_VARS *Agent_vars = NULL;
+
 static guint Modbus_top_ds(void)
  { struct timespec ts;
    clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -1039,79 +1042,79 @@ static guint Modbus_top_ds(void)
 /* Sortie: code de retour process                                                                                             */
 /******************************************************************************************************************************/
  gint main ( gint argc, gchar *argv[] )
-  { struct ABLS_AGENT *agent = Agent_init ( argv[0], "modbus", ABLS_AGENT_MODBUS_VERSION, sizeof(struct MODBUS_VARS), argc, argv );
-    struct MODBUS_VARS *vars = agent->vars;
+  { Agent = Agent_init ( argv[0], "modbus", ABLS_AGENT_MODBUS_VERSION, sizeof(struct MODBUS_VARS), argc, argv );
+    Agent_vars = Agent->vars;
 
-    Mqtt_subscribe ( agent->mqtt_local, "SYNC_INPUT/%s", agent->agent_tech_id );
-    Agent_is_ready ( agent );
+    Mqtt_subscribe ( Agent->mqtt_local, "SYNC_INPUT/%s", Agent->agent_tech_id );
+    Agent_is_ready ( Agent );
 
-    while(agent->Agent_run == AGENT_IS_RUNNING)                                             /* On tourne tant que necessaire */
-     { Agent_loop ( agent );                                            /* Loop sur l'agent pour mettre a jour la telemetrie */
+    while(Agent->Agent_run == AGENT_IS_RUNNING)                                             /* On tourne tant que necessaire */
+     { Agent_loop ( Agent );                                            /* Loop sur l'Agent pour mettre a jour la telemetrie */
 /****************************************************** Ecoute du master ******************************************************/
        JsonNode *mqtt_local_message;
-       while ( (mqtt_local_message = Agent_get_mqtt_local_message(agent)) != NULL )
-        { if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_DO", agent->agent_tech_id) )
-           { Modbus_SET_DO ( agent, mqtt_local_message ); }
-          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_AO", agent->agent_tech_id) )
-           { Modbus_SET_AO ( agent, mqtt_local_message ); }
-          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SYNC_INPUT", agent->agent_tech_id) )
-           { Modbus_Sync_INPUT_to_master ( agent ); }
+       while ( (mqtt_local_message = Agent_get_mqtt_local_message(Agent)) != NULL )
+        { if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_DO", Agent->agent_tech_id) )
+           { Modbus_SET_DO ( Agent, mqtt_local_message ); }
+          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_AO", Agent->agent_tech_id) )
+           { Modbus_SET_AO ( Agent, mqtt_local_message ); }
+          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SYNC_INPUT", Agent->agent_tech_id) )
+           { Modbus_Sync_INPUT_to_master ( Agent ); }
           Json_unref ( mqtt_local_message );
         }
 
 /****************************************************** Ecoute de l'api *******************************************************/
        JsonNode *mqtt_api_message;
-       while ( (mqtt_api_message = Agent_get_mqtt_api_message(agent)) != NULL )
+       while ( (mqtt_api_message = Agent_get_mqtt_api_message(Agent)) != NULL )
         { Json_unref ( mqtt_api_message ); }
 
 /********************************************* Début de l'interrogation du module *********************************************/
-       if ( vars->started == FALSE )                                               /* Si attente retente, on change de module */
-        { if ( vars->date_retente <= time(NULL) && Connecter_module(agent)==FALSE )
-           { Info( __func__, agent->agent_classe, agent->agent_tech_id, LOG_INFO, "Module DOWN. retrying in %ds", MODBUS_RETRY/10 );
-             vars->date_retente = time(NULL) + MODBUS_RETRY;
+       if ( Agent_vars->started == FALSE )                                               /* Si attente retente, on change de module */
+        { if ( Agent_vars->date_retente <= time(NULL) && Connecter_module(Agent)==FALSE )
+           { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Module DOWN. retrying in %ds", MODBUS_RETRY/10 );
+             Agent_vars->date_retente = time(NULL) + MODBUS_RETRY;
            }
         }
        else for (gint i=0; i<4; i++)                                     /* 1 tour programme = 4 itérations GET (DI/DO/AI/AO) */
-        { if ( vars->request )                                                           /* Requete en cours pour ce module ? */
-           { Recuperer_reponse_module ( agent ); }
+        { if ( Agent_vars->request )                                                           /* Requete en cours pour ce module ? */
+           { Recuperer_reponse_module ( Agent ); }
           else
-           { if (vars->date_next_eana<time(NULL))                                    /* Gestion décalée des I/O Analogiques */
-              { vars->date_next_eana = time(NULL) + MBUS_TEMPS_UPDATE_IO_ANA;                        /* Tous les 5 dixiemes */
-                vars->do_check_eana = TRUE;
+           { if (Agent_vars->date_next_eana<time(NULL))                                    /* Gestion décalée des I/O Analogiques */
+              { Agent_vars->date_next_eana = time(NULL) + MBUS_TEMPS_UPDATE_IO_ANA;                        /* Tous les 5 dixiemes */
+                Agent_vars->do_check_eana = TRUE;
               }
-             switch (vars->mode)
-              { case MODBUS_GET_DESCRIPTION: Interroger_description( agent ); break;
-                case MODBUS_GET_FIRMWARE   : Interroger_firmware( agent ); break;
-                case MODBUS_INIT_WATCHDOG1 : Init_watchdog1( agent ); break;
-                case MODBUS_INIT_WATCHDOG2 : Init_watchdog2( agent ); break;
-                case MODBUS_INIT_WATCHDOG3 : Init_watchdog3( agent ); break;
-                case MODBUS_INIT_WATCHDOG4 : Init_watchdog4( agent ); break;
-                case MODBUS_GET_NBR_AI     : Interroger_nbr_entree_ANA( agent ); break;
-                case MODBUS_GET_NBR_AO     : Interroger_nbr_sortie_ANA( agent ); break;
-                case MODBUS_GET_NBR_DI     : Interroger_nbr_entree_TOR( agent ); break;
-                case MODBUS_GET_NBR_DO     : Interroger_nbr_sortie_TOR( agent ); break;
-                case MODBUS_GET_DI         : if (vars->nbr_entree_tor) Interroger_entree_tor( agent );
-                                             else vars->mode = MODBUS_GET_AI;
+             switch (Agent_vars->mode)
+              { case MODBUS_GET_DESCRIPTION: Interroger_description( Agent ); break;
+                case MODBUS_GET_FIRMWARE   : Interroger_firmware( Agent ); break;
+                case MODBUS_INIT_WATCHDOG1 : Init_watchdog1( Agent ); break;
+                case MODBUS_INIT_WATCHDOG2 : Init_watchdog2( Agent ); break;
+                case MODBUS_INIT_WATCHDOG3 : Init_watchdog3( Agent ); break;
+                case MODBUS_INIT_WATCHDOG4 : Init_watchdog4( Agent ); break;
+                case MODBUS_GET_NBR_AI     : Interroger_nbr_entree_ANA( Agent ); break;
+                case MODBUS_GET_NBR_AO     : Interroger_nbr_sortie_ANA( Agent ); break;
+                case MODBUS_GET_NBR_DI     : Interroger_nbr_entree_TOR( Agent ); break;
+                case MODBUS_GET_NBR_DO     : Interroger_nbr_sortie_TOR( Agent ); break;
+                case MODBUS_GET_DI         : if (Agent_vars->nbr_entree_tor) Interroger_entree_tor( Agent );
+                                             else Agent_vars->mode = MODBUS_GET_AI;
                                              break;
-                case MODBUS_GET_AI         : if (vars->nbr_entree_ana && vars->do_check_eana)
-                                              { Interroger_entree_ana( agent ); }
-                                             else vars->mode = MODBUS_SET_DO;
+                case MODBUS_GET_AI         : if (Agent_vars->nbr_entree_ana && Agent_vars->do_check_eana)
+                                              { Interroger_entree_ana( Agent ); }
+                                             else Agent_vars->mode = MODBUS_SET_DO;
                                              break;
-                case MODBUS_SET_DO         : if (vars->nbr_sortie_tor) Interroger_sortie_tor( agent );
-                                             else vars->mode = MODBUS_SET_AO;
+                case MODBUS_SET_DO         : if (Agent_vars->nbr_sortie_tor) Interroger_sortie_tor( Agent );
+                                             else Agent_vars->mode = MODBUS_SET_AO;
                                              break;
-                case MODBUS_SET_AO         : if (vars->nbr_sortie_ana && vars->do_check_eana)
-                                              { Interroger_sortie_ana( agent ); }
-                                             else vars->mode = MODBUS_GET_DI;
-                                             vars->do_check_eana = FALSE;                                /* Le check est fait */
+                case MODBUS_SET_AO         : if (Agent_vars->nbr_sortie_ana && Agent_vars->do_check_eana)
+                                              { Interroger_sortie_ana( Agent ); }
+                                             else Agent_vars->mode = MODBUS_GET_DI;
+                                             Agent_vars->do_check_eana = FALSE;                                /* Le check est fait */
                                              break;
               }
            }
         }
      }
 
-    Deconnecter_module(agent);
-    Agent_end(agent);
+    Deconnecter_module(Agent);
+    Agent_end(Agent);
     return 0;
   }
 /*----------------------------------------------------------------------------------------------------------------------------*/
