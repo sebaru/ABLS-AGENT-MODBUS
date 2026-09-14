@@ -65,7 +65,7 @@
   };
 
  #define MODBUS_PORT_TCP    502                                               /* Port de connexion TCP pour accès aux modules */
- #define MODBUS_RETRY        10                                          /* 10 secondes entre chaque retry si pb de connexion */
+ #define MODBUS_RETRY       100                                          /* 10 secondes entre chaque retry si pb de connexion */
 
  struct TRAME_MODBUS_REQUETE                                                                 /* Definition d'une trame MODBUS */
   { guint16 transaction_id;
@@ -93,6 +93,9 @@
 /************************************************** Gestion des modbus ********************************************************/
  struct MODBUS_VARS
   { gboolean started;                                                                                      /* Est-il actif ?? */
+    gchar *hostname;
+    guint watchdog;
+    gchar *description;
     gint connexion;                                                                                     /* FD de connexion IP */
     gint mode;                                                                    /* Mode dans le processus de connexion WAGO */
     gint nbr_oct_lu;                                                                                /* Nombre d'octet deja lu */
