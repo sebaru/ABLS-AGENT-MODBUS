@@ -8,6 +8,8 @@ Type=simple
 ExecStart=/usr/bin/abls-agent-modbus --agent_tech_id %i
 DynamicUser=yes
 SupplementaryGroups=abls
+StateDirectory=abls-agent-modbus/%i
+WorkingDirectory=%S/abls-agent-modbus/%i
 Restart=on-failure
 RestartSec=5s
 

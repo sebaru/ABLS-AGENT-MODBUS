@@ -45,8 +45,6 @@
  #define MBUS_WRITE_REGISTER           0x06
  #define MBUS_WRITE_MULTIPLE_REGISTER  0x10
 
- #define MBUS_TEMPS_UPDATE_IO_ANA         1                              /* Rafraichssiement des I/Os ANA toutes les secondes */
-
  enum
   { MODBUS_GET_DESCRIPTION,
     MODBUS_GET_FIRMWARE,
@@ -64,8 +62,9 @@
     MODBUS_SET_AO,
   };
 
- #define MODBUS_PORT_TCP    502                                               /* Port de connexion TCP pour accès aux modules */
- #define MODBUS_RETRY        10                                          /* 10 secondes entre chaque retry si pb de connexion */
+ #define MODBUS_PORT_TCP        502                                           /* Port de connexion TCP pour accès aux modules */
+ #define MODBUS_TOP_NEXT_RETRY   10                                      /* 10 secondes entre chaque retry si pb de connexion */
+ #define MODBUS_TOP_NEXT_EANA     1                                      /* Rafraichssiement des I/Os ANA toutes les secondes */
 
  struct TRAME_MODBUS_REQUETE                                                                 /* Definition d'une trame MODBUS */
   { guint16 transaction_id;
@@ -93,6 +92,9 @@
 /************************************************** Gestion des modbus ********************************************************/
  struct MODBUS_VARS
   { gboolean started;                                                                                      /* Est-il actif ?? */
+    gchar *hostname;
+    guint watchdog;
+    gchar *description;
     gint connexion;                                                                                     /* FD de connexion IP */
     gint mode;                                                                    /* Mode dans le processus de connexion WAGO */
     gint nbr_oct_lu;                                                                                /* Nombre d'octet deja lu */
@@ -102,9 +104,9 @@
     gint nbr_entree_tor;                                                           /* Nombre de entree TOR donnée par le wago */
     gint nbr_sortie_tor;                                                           /* Nombre de sortie TOR donnée par le wago */
     gint nbr_deconnect;
-    guint date_retente;                                                  /* Prochaine date de raccrochage module en cas de DOWN */
-    guint date_last_reponse;                                                         /* Utilisé pour détecter un "DOWN module" */
-    guint date_next_eana;                                             /* Utilisé pour gérer les interrogations des bornes EANA */
+    guint top_next_reconnect;                                          /* Prochaine date de raccrochage module en cas de DOWN */
+    guint top_last_response;                                                        /* Utilisé pour détecter un "DOWN module" */
+    guint top_next_eana;                                             /* Utilisé pour gérer les interrogations des bornes EANA */
     gboolean do_check_eana;                                                           /* Interrogation des bornes EANA ou non */
     gboolean request;                                    /* Une requete a-t'elle été envoyée, et donc en attente de réponse ? */
     struct TRAME_MODBUS_REPONSE response;
@@ -114,6 +116,9 @@
     JsonNode **DO;                                                                                /* Tableau dynamique des DO */
     gpointer bit_comm;                                                                       /* Bit interne d'etat de la comm */
   };
+
+ extern struct ABLS_AGENT *Agent;
+ extern struct MODBUS_VARS *Agent_vars;
 
 /****************************************************** Déclaration des prototypes ********************************************/
 

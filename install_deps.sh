@@ -7,8 +7,6 @@ if [ "$(whoami)" != "root" ]; then
   exit 1
 fi
 
-groupadd -f abls 2>/dev/null || true
-
 if [ "$SOCLE" = "fedora" ]; then
   echo "Installing RPM-based dependencies"
   dnf install -y git cmake gcc pkg-config rpm-build rpm-sign
