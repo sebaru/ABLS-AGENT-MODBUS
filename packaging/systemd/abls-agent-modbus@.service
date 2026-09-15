@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/abls-agent-modbus --agent_tech_id %i
+ExecStart=/usr/bin/abls-agent-modbus --agent-tech-id %i
 DynamicUser=yes
 SupplementaryGroups=abls
 StateDirectory=abls-agent-modbus/%i
