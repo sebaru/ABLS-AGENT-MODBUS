@@ -152,7 +152,7 @@
     Agent_vars->started = FALSE;
     Agent_vars->request = FALSE;
     Agent_vars->nbr_deconnect++;
-    Agent_vars->date_retente = Agent->Top + MODBUS_RETRY;
+    Agent_vars->top_next_reconnect = Top_set_next_in(MODBUS_TOP_NEXT_RETRY);
     if (Agent_vars->DI) { g_free(Agent_vars->DI); Agent_vars->DI = NULL; }
     if (Agent_vars->DO) { g_free(Agent_vars->DO); Agent_vars->DO = NULL; }
     if (Agent_vars->AI) { g_free(Agent_vars->AI); Agent_vars->AI = NULL; }
@@ -229,8 +229,8 @@
 
     fcntl( connexion, F_SETFL, SO_KEEPALIVE | SO_REUSEADDR );
     Agent_vars->connexion         = connexion;                                                            /* Sauvegarde du fd */
-    Agent_vars->date_last_reponse = Agent->Top;
-    Agent_vars->date_retente      = 0;
+    Agent_vars->top_last_response = Top_set_now();
+    Agent_vars->top_next_reconnect= 0;
     Agent_vars->transaction_id    = 1;
     Agent_vars->started           = TRUE;
     Agent_vars->mode              = MODBUS_GET_DESCRIPTION;
@@ -754,7 +754,7 @@
 /******************************************************************************************************************************/
  static void Modbus_Processer_trame( void )
   { Agent_vars->nbr_oct_lu = 0;
-    Agent_vars->request = FALSE;                                                                       /* Une requete a été traitée */
+    Agent_vars->request = FALSE;                                                                 /* Une requete a été traitée */
 
     if ( (guint16) Agent_vars->response.proto_id )
        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "Wrong proto_id" );
@@ -762,9 +762,9 @@
        }
 
     gint cpt_byte, cpt_poid, cpt;
-    Agent_vars->date_last_reponse = Agent->Top;                                                    /* Estampillage de la date */
+    Agent_vars->top_last_response = Top_set_now();                                                 /* Estampillage de la date */
     Agent_send_comm_to_master ( Agent, TRUE );
-    if (ntohs(Agent_vars->response.transaction_id) != Agent_vars->transaction_id)                                     /* Mauvaise reponse */
+    if (ntohs(Agent_vars->response.transaction_id) != Agent_vars->transaction_id)                         /* Mauvaise reponse */
      { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Wrong transaction_id: attendu %d, recu %d",
              Agent_vars->transaction_id, ntohs(Agent_vars->response.transaction_id) );
      }
@@ -927,21 +927,22 @@
     struct timeval tv;
     gint retval, cpt;
 
-    if (Agent_vars->date_last_reponse + 60 < time(NULL))                                     /* Detection attente trop longue */
+    if ( Top_is_too_old(Agent_vars->top_last_response, 60 ) )                                /* Detection attente trop longue */
      { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
              "Timeout agent started=%d, mode=%02d, "
-             "transactionID=%06d, nbr_deconnect=%02d, last_reponse=%03ds ago, retente=in %03ds, date_next_eana=in %03ds",
-              Agent_vars->started, Agent_vars->mode, Agent_vars->transaction_id, Agent_vars->nbr_deconnect,
-             (time(NULL) - Agent_vars->date_last_reponse),
-             (Agent_vars->date_retente > time(NULL)   ? (Agent_vars->date_retente   - time(NULL)) : -1),
-             (Agent_vars->date_next_eana > time(NULL) ? (Agent_vars->date_next_eana - time(NULL)) : -1)
+             "transactionID=%06d, nbr_deconnect=%02d, top_last_response=%03ds ago, "
+             "top_next_reconnect=in %03ds, top_next_eana=in %03ds",
+             Agent_vars->started, Agent_vars->mode, Agent_vars->transaction_id, Agent_vars->nbr_deconnect,
+             Top_age   (Agent_vars->top_last_response),
+             Top_until (Agent_vars->top_next_reconnect),
+             Top_until (Agent_vars->top_next_eana)
            );
        Deconnecter_module();
        return;
      }
 
     FD_ZERO(&fdselect);
-    FD_SET(Agent_vars->connexion, &fdselect );
+    FD_SET(Agent_vars->connexion, &fdselect);
     tv.tv_sec = 0;
     tv.tv_usec= 1000;                                                                               /* Attente d'un caractere */
     retval = select(Agent_vars->connexion+1, &fdselect, NULL, NULL, &tv );
@@ -1018,18 +1019,19 @@
         }
 
 /********************************************* Début de l'interrogation du module *********************************************/
-       if ( Agent_vars->started == FALSE )                                         /* Si attente retente, on change de module */
-        { if ( Agent_vars->date_retente <= time(NULL) && Connecter_module()==FALSE )
-           { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Module DOWN. retrying in %ds", MODBUS_RETRY/10 );
-             Agent_vars->date_retente = time(NULL) + MODBUS_RETRY;
+       if ( Agent_vars->started == FALSE )                                           /* Si non started, on tente la connexion */
+        { if ( Top_is_out(Agent_vars->top_next_reconnect) && Connecter_module()==FALSE )
+           { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO,
+                   "Module DOWN. retrying in %ds", MODBUS_TOP_NEXT_RETRY );
+             Agent_vars->top_next_reconnect = Top_set_next_in(MODBUS_TOP_NEXT_RETRY);
            }
         }
        else for (gint i=0; i<4; i++)                                     /* 1 tour programme = 4 itérations GET (DI/DO/AI/AO) */
         { if ( Agent_vars->request )                                                     /* Requete en cours pour ce module ? */
            { Recuperer_reponse_module(); }
           else
-           { if (Agent_vars->date_next_eana<time(NULL))                                /* Gestion décalée des I/O Analogiques */
-              { Agent_vars->date_next_eana = time(NULL) + MBUS_TEMPS_UPDATE_IO_ANA;                    /* Tous les 5 dixiemes */
+           { if (Top_is_out(Agent_vars->top_next_eana))                                /* Gestion décalée des I/O Analogiques */
+              { Agent_vars->top_next_eana = Top_set_next_in(MODBUS_TOP_NEXT_EANA);                       /* Tous les secondes */
                 Agent_vars->do_check_eana = TRUE;
               }
              switch (Agent_vars->mode)
