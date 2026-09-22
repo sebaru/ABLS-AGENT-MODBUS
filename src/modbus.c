@@ -59,25 +59,38 @@
     gchar *msg_acronyme       = Json_get_string ( msg, "acronyme" );
 
     if (!msg_agent_tech_id)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" ); }
-    else if (!msg_agent_acronyme)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" ); }
-    else if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" ); }
-    else if (!Json_has_member ( msg, "etat" ))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" ); }
-    else
-     { gboolean etat = Json_get_bool ( msg, "etat" );
-       for (gint num=0; num<Agent_vars->nbr_sortie_tor; num++)
-        { if ( Agent_vars->DO && Agent_vars->DO[num] &&
-               !strcasecmp ( Json_get_string(Agent_vars->DO[num], "agent_acronyme"), msg_agent_acronyme ) )
-           { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "SET_DO '%s:%s'/'%s:%s'=%d",
-                       msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, etat );
-             Json_add_bool ( Agent_vars->DO[num], "etat", etat );
-             break;
-           }
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
+       return;
+     }
+
+    if (!msg_agent_acronyme)
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
+       return;
+     }
+
+    if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" );
+       return;
+     }
+
+    if (!Json_has_member ( msg, "etat" ))
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" );
+       return;
+     }
+
+    gboolean etat = Json_get_bool ( msg, "etat" );
+    for (gint num=0; num<Agent_vars->nbr_sortie_tor; num++)
+     { if ( Agent_vars->DO && Agent_vars->DO[num] &&
+            !strcasecmp ( Json_get_string(Agent_vars->DO[num], "agent_acronyme"), msg_agent_acronyme ) )
+        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "SET_DO '%s:%s'/'%s:%s'=%d",
+                msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, etat );
+          Json_add_bool ( Agent_vars->DO[num], "etat", etat );
+          break;
         }
      }
+    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+          "SET_DO '%s:%s'/'%s:%s'=%d FAILED: not found in config",
+          msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, etat );
   }
 /******************************************************************************************************************************/
 /* Modbus_SET_AO: Met a jour une sortie ANA en fonction du jsonnode en parametre                                              */
@@ -91,38 +104,48 @@
     gchar *msg_acronyme       = Json_get_string ( msg, "acronyme" );
 
     if (!msg_agent_tech_id)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" ); }
-    else if (!msg_agent_acronyme)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" ); }
-    else if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" ); }
-    else if (!Json_has_member ( msg, "valeur" ))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" ); }
-    else
-     { gdouble valeur = Json_get_double ( msg, "valeur" );
-       for (gint num=0; num<Agent_vars->nbr_sortie_ana; num++)
-        { if ( Agent_vars->AO && Agent_vars->AO[num] &&
-               !strcasecmp ( Json_get_string(Agent_vars->AO[num], "thread_acronyme"), msg_agent_acronyme ) )
-           { gint type_borne = Json_get_int    ( Agent_vars->AO[num], "type_borne" );
-             gint new_val_int;
-             switch( type_borne )
-              { case WAGO_750550: if (valeur > 10.0) valeur = 10.0;                                       /* Borne WAGO 0-10V */
-                                  if (valeur <  0.0) valeur = 0.0;
-                                  new_val_int = (gint) (32767.0 * valeur / 10.0);        /* Borne sur 32768 valeurs de sortie */
-                                  break;
-/*              case WAGO_XXX   : gdouble min     = Json_get_double ( vars->AO[num], "min" );
-                                  gdouble max     = Json_get_double ( vars->AO[num], "max" );
-                                  if (valeur < min) valeur = min;
-                                  if (valeur > max) valeur = max;
-                                  new_val_int = (gint) (4095 * (valeur - min) / max);
-                                  break;*/
-                default: new_val_int = 0;
-              }
-             Json_add_int ( Agent_vars->AO[num], "val_int", new_val_int );
-             Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "SET_AO '%s:%s'/'%s:%s'=%f (val_int=%d)",
-                   msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, valeur, new_val_int );
-             break;
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
+       return;
+     }
+
+    if (!msg_agent_acronyme)
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
+       return;
+     }
+
+    if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" );
+       return;
+     }
+
+    if (!Json_has_member ( msg, "etat" ))
+     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" );
+       return;
+     }
+
+    gdouble valeur = Json_get_double ( msg, "valeur" );
+    for (gint num=0; num<Agent_vars->nbr_sortie_ana; num++)
+     { if ( Agent_vars->AO && Agent_vars->AO[num] &&
+            !strcasecmp ( Json_get_string(Agent_vars->AO[num], "agent_acronyme"), msg_agent_acronyme ) )
+        { gint type_borne = Json_get_int ( Agent_vars->AO[num], "type_borne" );
+          gint new_val_int;
+          switch( type_borne )
+           { case WAGO_750550: if (valeur > 10.0) valeur = 10.0;                                       /* Borne WAGO 0-10V */
+                               if (valeur <  0.0) valeur = 0.0;
+                               new_val_int = (gint) (32767.0 * valeur / 10.0);        /* Borne sur 32768 valeurs de sortie */
+                               break;
+/*           case WAGO_XXX   : gdouble min     = Json_get_double ( vars->AO[num], "min" );
+                               gdouble max     = Json_get_double ( vars->AO[num], "max" );
+                               if (valeur < min) valeur = min;
+                               if (valeur > max) valeur = max;
+                               new_val_int = (gint) (4095 * (valeur - min) / max);
+                               break;*/
+             default: new_val_int = 0;
            }
+          Json_add_int ( Agent_vars->AO[num], "val_int", new_val_int );
+          Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "SET_AO '%s:%s'/'%s:%s'=%f (val_int=%d)",
+                msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, valeur, new_val_int );
+          break;
         }
      }
   }
@@ -718,7 +741,7 @@
                       Json_get_string ( Agent_vars->AO[num], "libelle" ),
                       Json_get_string ( Agent_vars->AO[num], "unite" ) );
               } else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "map AO: num %d out of range '%d'",
-                               num, Agent_vars->nbr_sortie_ana );
+                           num, Agent_vars->nbr_sortie_ana );
            }
         }
        else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ALERT, "Memory Error for AO" );
