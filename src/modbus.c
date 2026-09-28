@@ -692,7 +692,7 @@
                 Json_add_bool   ( Agent_vars->AI[num], "need_sync", TRUE );
                 Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New AI '%s' (%s, %s)",
                       Json_get_string ( Agent_vars->AI[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->AI[num], "libelle" ),
+                      Json_get_string ( Agent_vars->AI[num], "description" ),
                       Json_get_string ( Agent_vars->AI[num], "unite" ) );
               } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Map AI: num %d out of range '%d'",
                            num, Agent_vars->nbr_entree_ana );
@@ -715,7 +715,7 @@
                 Json_add_bool ( Agent_vars->DI[num], "need_sync", TRUE );
                 Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New DI '%s' (%s), flip=%d",
                       Json_get_string ( Agent_vars->DI[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->DI[num], "libelle" ),
+                      Json_get_string ( Agent_vars->DI[num], "description" ),
                       Json_get_bool   ( Agent_vars->DI[num], "flip" ));
               } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Map DI: num %d out of range '%d'",
                                 num, Agent_vars->nbr_entree_tor );
@@ -738,7 +738,7 @@
                 Json_add_int    ( Agent_vars->AO[num], "val_int", 0 );
                 Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New AO '%s' (%s, %s)",
                       Json_get_string ( Agent_vars->AO[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->AO[num], "libelle" ),
+                      Json_get_string ( Agent_vars->AO[num], "description" ),
                       Json_get_string ( Agent_vars->AO[num], "unite" ) );
               } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "map AO: num %d out of range '%d'",
                            num, Agent_vars->nbr_sortie_ana );
@@ -760,7 +760,7 @@
                 Json_add_bool   ( Agent_vars->DO[num], "etat", FALSE );
                 Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New DO '%s' (%s)",
                       Json_get_string ( Agent_vars->DO[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->DO[num], "libelle" ));
+                      Json_get_string ( Agent_vars->DO[num], "description" ));
               } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "map DO: num %d out of range '%d'",
                                num, Agent_vars->nbr_sortie_tor );
            }
