@@ -59,22 +59,22 @@
     gchar *msg_acronyme       = Json_get_string ( msg, "acronyme" );
 
     if (!msg_agent_tech_id)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
        return;
      }
 
     if (!msg_agent_acronyme)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
        return;
      }
 
-    if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" );
+    if (strcasecmp (msg_agent_tech_id, Agent_get_tech_id(Agent)))
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Pas pour nous" );
        return;
      }
 
     if (!Json_has_member ( msg, "etat" ))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "Requete mal formée manque etat" );
        return;
      }
 
@@ -82,13 +82,13 @@
     for (gint num=0; num<Agent_vars->nbr_sortie_tor; num++)
      { if ( Agent_vars->DO && Agent_vars->DO[num] &&
             !strcasecmp ( Json_get_string(Agent_vars->DO[num], "agent_acronyme"), msg_agent_acronyme ) )
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "SET_DO '%s:%s'/'%s:%s'=%d",
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "SET_DO '%s:%s'/'%s:%s'=%d",
                 msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, etat );
           Json_add_bool ( Agent_vars->DO[num], "etat", etat );
           break;
         }
      }
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
           "SET_DO '%s:%s'/'%s:%s'=%d FAILED: not found in config",
           msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, etat );
   }
@@ -104,22 +104,22 @@
     gchar *msg_acronyme       = Json_get_string ( msg, "acronyme" );
 
     if (!msg_agent_tech_id)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "requete mal formée manque msg_agent_tech_id" );
        return;
      }
 
     if (!msg_agent_acronyme)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "requete mal formée manque msg_agent_acronyme" );
        return;
      }
 
-    if (strcasecmp (msg_agent_tech_id, Agent->agent_tech_id))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Pas pour nous" );
+    if (strcasecmp (msg_agent_tech_id, Agent_get_tech_id(Agent)))
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Pas pour nous" );
        return;
      }
 
     if (!Json_has_member ( msg, "etat" ))
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Requete mal formée manque etat" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "Requete mal formée manque etat" );
        return;
      }
 
@@ -143,7 +143,7 @@
              default: new_val_int = 0;
            }
           Json_add_int ( Agent_vars->AO[num], "val_int", new_val_int );
-          Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "SET_AO '%s:%s'/'%s:%s'=%f (val_int=%d)",
+          Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "SET_AO '%s:%s'/'%s:%s'=%f (val_int=%d)",
                 msg_agent_tech_id, msg_agent_acronyme, msg_tech_id, msg_acronyme, valeur, new_val_int );
           break;
         }
@@ -155,7 +155,7 @@
 /* Sortie: Niet                                                                                                               */
 /******************************************************************************************************************************/
  static void Modbus_Sync_INPUT_to_master ( void )
-  { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Syncing IO to master" );
+  { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Syncing IO to master" );
 
     for ( gint cpt = 0; cpt<Agent_vars->nbr_entree_tor; cpt++)
      { if (Agent_vars->DI[cpt]) Json_add_bool ( Agent_vars->DI[cpt], "need_sync", TRUE ); }
@@ -185,7 +185,7 @@
     Agent_vars->nbr_sortie_ana = 0;
     Agent_vars->nbr_sortie_tor = 0;
     Agent_send_comm_to_master ( Agent, FALSE );
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Module '%s' disconnected", Agent_vars->hostname );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Module '%s' disconnected", Agent_vars->hostname );
   }
 /******************************************************************************************************************************/
 /* Connecter: Tentative de connexion au serveur                                                                               */
@@ -207,11 +207,11 @@
     sndtimeout.tv_sec  = 10;
     sndtimeout.tv_usec =  0;
 
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Trying to connect agent to '%s'", Agent_vars->hostname );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Trying to connect agent to '%s'", Agent_vars->hostname );
 
     s = getaddrinfo( Agent_vars->hostname, "502", &hints, &result);
     if (s != 0)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR,
              "getaddrinfo Failed for agent %s (%s)", Agent_vars->hostname, gai_strerror(s) );
        return(FALSE);
      }
@@ -224,24 +224,24 @@
     for (rp = result; rp != NULL; rp = rp->ai_next)
      { connexion = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
        if (connexion == -1)
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR,
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR,
                 "Socket creation failed for modbus '%s'", Agent_vars->hostname );
           continue;
         }
 
        if ( setsockopt ( connexion, SOL_SOCKET, SO_SNDTIMEO, (char *)&sndtimeout, sizeof(sndtimeout)) < 0 )
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR,
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR,
                 "Socket Set Options failed for modbus '%s'", Agent_vars->hostname );
           continue;
         }
 
        if (connect(connexion, rp->ai_addr, rp->ai_addrlen) != -1)
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO,
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO,
                 "Using family=%d for host '%s'", rp->ai_family, Agent_vars->hostname );
           break;  /* Success */
         }
        else
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR,
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR,
                    "'connexion refused by agent '%s' family=%d error '%s'",
                    Agent_vars->hostname, rp->ai_family, strerror(errno) );
         }
@@ -257,7 +257,7 @@
     Agent_vars->transaction_id    = 1;
     Agent_vars->started           = TRUE;
     Agent_vars->mode              = MODBUS_GET_DESCRIPTION;
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "Module '%s' Connected", Agent_vars->hostname );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "Module '%s' Connected", Agent_vars->hostname );
 
     return(TRUE);
   }
@@ -279,12 +279,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                      /* Une requete a élé lancée */
      }
   }
@@ -306,12 +306,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                    /* Une requete a élé lancée */
      }
   }
@@ -334,12 +334,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                    /* Une requete a élé lancée */
      }
   }
@@ -362,12 +362,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                /* Une requete a élé lancée */
      }
   }
@@ -393,12 +393,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                /* Une requete a élé lancée */
      }
   }
@@ -421,12 +421,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                 "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                /* Une requete a élé lancée */
      }
   }
@@ -448,12 +448,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                    /* Une requete a élé lancée */
      }
   }
@@ -475,12 +475,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                    /* Une requete a élé lancée */
      }
   }
@@ -502,12 +502,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
                "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                    /* Une requete a élé lancée */
      }
   }
@@ -529,12 +529,12 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
     else
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "OK" );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "OK" );
        Agent_vars->request = TRUE;                                                                      /* Une requete a élé lancée */
      }
   }
@@ -557,7 +557,7 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
@@ -582,7 +582,7 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, 12 );
     if ( retour != 12 )                                                                                /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
@@ -622,7 +622,7 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, taille+6 );
     if ( retour != taille+6 )                                                                          /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
@@ -663,7 +663,7 @@
 
     gint retour = write ( Agent_vars->connexion, &requete, taille+6 );
     if ( retour != taille+6 )                                                                          /* Envoi de la requete */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Failed for agent '%s': error %d/%s", Agent_vars->hostname, retour, strerror(errno) );
        Deconnecter_module();
      }
@@ -677,7 +677,7 @@
  static void Modbus_load_io_config ( void )
   {
 /***************************************************** Mapping des AnalogInput ************************************************/
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Allocate %d AI", Agent_vars->nbr_entree_ana );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Allocate %d AI", Agent_vars->nbr_entree_ana );
     if(Agent_vars->nbr_entree_ana)
      { Agent_vars->AI = g_try_malloc0( sizeof(JsonNode *) * Agent_vars->nbr_entree_ana );
        if (Agent_vars->AI)
@@ -690,18 +690,18 @@
                 Json_add_double ( Agent_vars->AI[num], "valeur", 0.0 );
                 Json_add_bool   ( Agent_vars->AI[num], "in_range", FALSE );
                 Json_add_bool   ( Agent_vars->AI[num], "need_sync", TRUE );
-                Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "New AI '%s' (%s, %s)",
+                Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New AI '%s' (%s, %s)",
                       Json_get_string ( Agent_vars->AI[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->AI[num], "libelle" ),
+                      Json_get_string ( Agent_vars->AI[num], "description" ),
                       Json_get_string ( Agent_vars->AI[num], "unite" ) );
-              } else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "Map AI: num %d out of range '%d'",
+              } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Map AI: num %d out of range '%d'",
                            num, Agent_vars->nbr_entree_ana );
            }
         }
-       else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ALERT, "Memory Error for AI" );
+       else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ALERT, "Memory Error for AI" );
      }
 /***************************************************** Mapping des DigitalInput ***********************************************/
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Allocate %d DI", Agent_vars->nbr_entree_tor );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Allocate %d DI", Agent_vars->nbr_entree_tor );
     if(Agent_vars->nbr_entree_tor)
      { Agent_vars->DI = g_try_malloc0( sizeof(JsonNode *) * Agent_vars->nbr_entree_tor );
        if (Agent_vars->DI)
@@ -713,18 +713,18 @@
               { Agent_vars->DI[num] = element;
                 Json_add_bool ( Agent_vars->DI[num], "etat", FALSE );
                 Json_add_bool ( Agent_vars->DI[num], "need_sync", TRUE );
-                Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "New DI '%s' (%s), flip=%d",
+                Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New DI '%s' (%s), flip=%d",
                       Json_get_string ( Agent_vars->DI[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->DI[num], "libelle" ),
+                      Json_get_string ( Agent_vars->DI[num], "description" ),
                       Json_get_bool   ( Agent_vars->DI[num], "flip" ));
-              } else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "Map DI: num %d out of range '%d'",
+              } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Map DI: num %d out of range '%d'",
                                 num, Agent_vars->nbr_entree_tor );
            }
         }
-       else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ALERT, "Memory Error for DI" );
+       else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ALERT, "Memory Error for DI" );
      }
 /***************************************************** Mapping des AnalogOutput ***********************************************/
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Allocate %d AO", Agent_vars->nbr_sortie_ana );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Allocate %d AO", Agent_vars->nbr_sortie_ana );
     if(Agent_vars->nbr_sortie_ana)
      { Agent_vars->AO = g_try_malloc0( sizeof(JsonNode *) * Agent_vars->nbr_sortie_ana );
        if (Agent_vars->AO)
@@ -736,18 +736,18 @@
               { Agent_vars->AO[num] = element;
                 Json_add_double ( Agent_vars->AO[num], "valeur", 0.0 );
                 Json_add_int    ( Agent_vars->AO[num], "val_int", 0 );
-                Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "New AO '%s' (%s, %s)",
+                Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New AO '%s' (%s, %s)",
                       Json_get_string ( Agent_vars->AO[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->AO[num], "libelle" ),
+                      Json_get_string ( Agent_vars->AO[num], "description" ),
                       Json_get_string ( Agent_vars->AO[num], "unite" ) );
-              } else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "map AO: num %d out of range '%d'",
+              } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "map AO: num %d out of range '%d'",
                            num, Agent_vars->nbr_sortie_ana );
            }
         }
-       else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ALERT, "Memory Error for AO" );
+       else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ALERT, "Memory Error for AO" );
      }
 /***************************************************** Mapping des DigitalOutput **********************************************/
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Allocate %d DO", Agent_vars->nbr_sortie_tor );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Allocate %d DO", Agent_vars->nbr_sortie_tor );
     if(Agent_vars->nbr_sortie_tor)
      { Agent_vars->DO = g_try_malloc0( sizeof(JsonNode *) * Agent_vars->nbr_sortie_tor );
        if (Agent_vars->DO)
@@ -758,17 +758,17 @@
              if ( 0 <= num && num < Agent_vars->nbr_sortie_tor )
               { Agent_vars->DO[num] = element;
                 Json_add_bool   ( Agent_vars->DO[num], "etat", FALSE );
-                Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "New DO '%s' (%s)",
+                Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "New DO '%s' (%s)",
                       Json_get_string ( Agent_vars->DO[num], "agent_acronyme" ),
-                      Json_get_string ( Agent_vars->DO[num], "libelle" ));
-              } else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "map DO: num %d out of range '%d'",
+                      Json_get_string ( Agent_vars->DO[num], "description" ));
+              } else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "map DO: num %d out of range '%d'",
                                num, Agent_vars->nbr_sortie_tor );
            }
         }
-       else Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ALERT, " Memory Error for DO" );
+       else Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ALERT, " Memory Error for DO" );
      }
 /******************************* Recherche des event text EA a raccrocher aux bits internes ***********************************/
-    Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "Module '%s' : io config done", Agent_vars->description );
+    Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "Module '%s' : io config done", Agent_vars->description );
   }
 /******************************************************************************************************************************/
 /* Recuperer_borne: Recupere les informations d'une borne MODBUS                                                              */
@@ -780,7 +780,7 @@
     Agent_vars->request = FALSE;                                                                 /* Une requete a été traitée */
 
     if ( (guint16) Agent_vars->response.proto_id )
-       { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "Wrong proto_id" );
+       { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Wrong proto_id" );
          Deconnecter_module();
        }
 
@@ -788,11 +788,11 @@
     Agent_vars->top_last_response = Top_set_now();                                                 /* Estampillage de la date */
     Agent_send_comm_to_master ( Agent, TRUE );
     if (ntohs(Agent_vars->response.transaction_id) != Agent_vars->transaction_id)                         /* Mauvaise reponse */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Wrong transaction_id: attendu %d, recu %d",
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "Wrong transaction_id: attendu %d, recu %d",
              Agent_vars->transaction_id, ntohs(Agent_vars->response.transaction_id) );
      }
     if ( Agent_vars->response.fct >=0x80 )
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Erreur Reponse, Error %d, Exception code %d",
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "Erreur Reponse, Error %d, Exception code %d",
              Agent_vars->response.fct, (int)Agent_vars->response.data[0] );
        Deconnecter_module();
        return;
@@ -856,7 +856,7 @@
             chaine[0] = ntohs( (gint16)Agent_vars->response.data[1] );
             chaine[2] = ntohs( (gint16)Agent_vars->response.data[3] );
             chaine[taille] = 0;
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Description (size %d) = '%s'", taille, chaine );
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Description (size %d) = '%s'", taille, chaine );
             Agent_vars->mode = MODBUS_GET_FIRMWARE;
             break;
          }
@@ -869,33 +869,33 @@
             chaine[0] = ntohs( (gint16)Agent_vars->response.data[1] );
             chaine[2] = ntohs( (gint16)Agent_vars->response.data[3] );
             chaine[taille] = 0;
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Firmware (size %d) = '%s'", taille, chaine );
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Firmware (size %d) = '%s'", taille, chaine );
             Agent_vars->mode = MODBUS_INIT_WATCHDOG1;
             break;
          }
        case MODBUS_INIT_WATCHDOG1:
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Watchdog1 = %d %d",
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Watchdog1 = %d %d",
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 0) ),
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 2) )
                 );
             Agent_vars->mode = MODBUS_INIT_WATCHDOG2;
             break;
        case MODBUS_INIT_WATCHDOG2:
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Watchdog2 = %d %d",
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Watchdog2 = %d %d",
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 0) ),
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 2) )
                 );
             Agent_vars->mode = MODBUS_INIT_WATCHDOG3;
             break;
        case MODBUS_INIT_WATCHDOG3:
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Watchdog3 = %d %d",
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Watchdog3 = %d %d",
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 0) ),
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 2) )
                 );
             Agent_vars->mode = MODBUS_INIT_WATCHDOG4;
             break;
        case MODBUS_INIT_WATCHDOG4:
-            Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_DEBUG, "Watchdog4 = %d %d",
+            Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_DEBUG, "Watchdog4 = %d %d",
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 0) ),
                   ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 2) )
                 );
@@ -903,13 +903,13 @@
             break;
        case MODBUS_GET_NBR_AI:
              { Agent_vars->nbr_entree_ana = ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 1) ) / 16;
-               Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Get %03d Entree ANA", Agent_vars->nbr_entree_ana );
+               Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Get %03d Entree ANA", Agent_vars->nbr_entree_ana );
                Agent_vars->mode = MODBUS_GET_NBR_AO;
              }
             break;
        case MODBUS_GET_NBR_AO:
              { Agent_vars->nbr_sortie_ana = ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 1) ) / 16;
-               Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Get %03d Sortie ANA", Agent_vars->nbr_sortie_ana );
+               Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Get %03d Sortie ANA", Agent_vars->nbr_sortie_ana );
                Agent_vars->mode = MODBUS_GET_NBR_DI;
              }
             break;
@@ -917,17 +917,17 @@
              { gint nbr;
                nbr = ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 1) );
                Agent_vars->nbr_entree_tor = nbr;
-               Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Get %03d Entree TOR", Agent_vars->nbr_entree_tor );
+               Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Get %03d Entree TOR", Agent_vars->nbr_entree_tor );
                Agent_vars->mode = MODBUS_GET_NBR_DO;
              }
             break;
        case MODBUS_GET_NBR_DO:
              { Agent_vars->nbr_sortie_tor = ntohs( *(gint16 *)((gchar *)&Agent_vars->response.data + 1) );
-               Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO, "Get %03d Sortie TOR", Agent_vars->nbr_sortie_tor );
+               Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO, "Get %03d Sortie TOR", Agent_vars->nbr_sortie_tor );
                Modbus_load_io_config();                                                          /* Initialise les IO modules */
                JsonNode *RootNode = Json_create();                                                /* Envoi de la conf a l'API */
                if (!RootNode) break;
-               Json_add_string ( RootNode, "agent_tech_id", Agent->agent_tech_id );
+               Json_add_string ( RootNode, "agent_tech_id", Agent_get_tech_id(Agent) );
                Json_add_int    ( RootNode, "nbr_entree_tor", Agent_vars->nbr_entree_tor );
                Json_add_int    ( RootNode, "nbr_entree_ana", Agent_vars->nbr_entree_ana );
                Json_add_int    ( RootNode, "nbr_sortie_tor", Agent_vars->nbr_sortie_tor );
@@ -951,7 +951,7 @@
     gint retval, cpt;
 
     if ( Top_is_too_old(Agent_vars->top_last_response, 60 ) )                                /* Detection attente trop longue */
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING,
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING,
              "Timeout agent started=%d, mode=%02d, "
              "transactionID=%06d, nbr_deconnect=%02d, top_last_response=%03ds ago, "
              "top_next_reconnect=in %03ds, top_next_eana=in %03ds",
@@ -977,7 +977,7 @@
        else { bute = TAILLE_ENTETE_MODBUS + ntohs(Agent_vars->response.taille); }
 
        if (bute>=sizeof(struct TRAME_MODBUS_REPONSE))
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR,
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR,
                 "bute = %d >= %d (sizeof(agent->reponse)=%d, taille recue = %d)",
                 bute, sizeof(struct TRAME_MODBUS_REPONSE), sizeof(Agent_vars->response), ntohs(Agent_vars->response.taille) );
           Deconnecter_module();
@@ -991,7 +991,7 @@
            { Modbus_Processer_trame(); }                                            /* Si l'on a trouvé une trame complète !! */
         }
        else
-        { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_WARNING, "Read Error. Get %d, error %s", cpt, strerror(errno) );
+        { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_WARNING, "Read Error. Get %d, error %s", cpt, strerror(errno) );
           Deconnecter_module ();
         }
       }
@@ -1006,29 +1006,29 @@
     Config_add_parameter ( "description", "string", "Description du device Modbus",         CONFIG_STRING );
     Config_add_parameter ( "watchdog",    "int",    "Délai de sécurité en 1/10 de seconde", CONFIG_INT    );
     Agent = Agent_init ( argv[0], "modbus", ABLS_AGENT_MODBUS_VERSION, sizeof(struct MODBUS_VARS), argc, argv );
-    Agent_vars = Agent->vars;
+    Agent_vars = Agent_get_vars(Agent);
 
     Agent_vars->hostname = Agent_config_get_string ( Agent, "hostname" );
     if (!Agent_vars->hostname)
-     { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_ERR, "Missing hostname, stopping." );
+     { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_ERR, "Missing hostname, stopping." );
        Agent_end ( Agent );
      }
     Agent_vars->watchdog = Agent_config_get_int ( Agent, "watchdog" );
     Agent_vars->description = Agent_config_get_string ( Agent, "description" );
 
-    Mqtt_subscribe ( Agent->mqtt_local, "SYNC_INPUT/%s", Agent->agent_tech_id );
+    Agent_subscribe_mqtt_local ( Agent, "SYNC_INPUT/%s", Agent_get_tech_id(Agent) );
     Agent_is_ready ( Agent );
 
-    while(Agent->Agent_run == AGENT_IS_RUNNING)                                             /* On tourne tant que necessaire */
+    while(Agent_is_running(Agent))                                             /* On tourne tant que necessaire */
      { Agent_loop ( Agent );                                            /* Loop sur l'Agent pour mettre a jour la telemetrie */
 /****************************************************** Ecoute du master ******************************************************/
        JsonNode *mqtt_local_message;
        while ( (mqtt_local_message = Agent_get_mqtt_local_message(Agent)) != NULL )
-        { if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_DO", Agent->agent_tech_id) )
+        { if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_DO", Agent_get_tech_id(Agent)) )
            { Modbus_SET_DO ( mqtt_local_message ); }
-          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_AO", Agent->agent_tech_id) )
+          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SET_AO", Agent_get_tech_id(Agent)) )
            { Modbus_SET_AO ( mqtt_local_message ); }
-          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SYNC_INPUT", Agent->agent_tech_id) )
+          else if ( Mqtt_topic_is(mqtt_local_message, 2, "SYNC_INPUT", Agent_get_tech_id(Agent)) )
            { Modbus_Sync_INPUT_to_master (); }
           Json_unref ( mqtt_local_message );
         }
@@ -1036,15 +1036,15 @@
 /****************************************************** Ecoute de l'api *******************************************************/
        JsonNode *mqtt_api_message;
        while ( (mqtt_api_message = Agent_get_mqtt_api_message(Agent)) != NULL )
-        { if ( Mqtt_topic_is ( mqtt_api_message, 4, "+", "AGENT", Agent->agent_tech_id, "TEST" ) )
-           { Info(__func__, Agent->agent_classe, Agent->agent_tech_id, LOG_NOTICE, "Agent Test from API."); }
+        { if ( Mqtt_topic_is ( mqtt_api_message, 4, "+", "AGENT", Agent_get_tech_id(Agent), "TEST" ) )
+           { Info(__func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_NOTICE, "Agent Test from API."); }
           Json_unref ( mqtt_api_message );
         }
 
 /********************************************* Début de l'interrogation du module *********************************************/
        if ( Agent_vars->started == FALSE )                                           /* Si non started, on tente la connexion */
         { if ( Top_is_out(Agent_vars->top_next_reconnect) && Connecter_module()==FALSE )
-           { Info( __func__, Agent->agent_classe, Agent->agent_tech_id, LOG_INFO,
+           { Info( __func__, Agent_get_classe(Agent), Agent_get_tech_id(Agent), LOG_INFO,
                    "Module DOWN. retrying in %ds", MODBUS_TOP_NEXT_RETRY );
              Agent_vars->top_next_reconnect = Top_set_next_in(MODBUS_TOP_NEXT_RETRY);
            }
